@@ -1,0 +1,16 @@
+{
+  "name": "@dgteam/validator",
+  "version": "0.0.2",
+  "description": "",
+  "author": "2681137811 <donguayx@qq.com>",
+  "main": "src/index.js",
+  "scripts": {
+    "push": "npm publish --access public",
+    "reset": "rimraf node_modules"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "validator": "~6.2.1"
+  },
+  "devDependencies": {}
+}
