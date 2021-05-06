@@ -3,40 +3,40 @@ const METHOD_MAP = require('./method.js')
 const helper = require('./helper.js')
 const {assert} = helper
 
-const dataCheker = function(value) {
-    let format = value.split('-')
-    if (format.length !== 3) {
-        return false
-    }
-    for (let i=0;i<format.length;i++) {
-        let date = format[i]
-        if (!/^\d*$/.test(date)) {
-            return false
-        } else if (i===0) {
-            if (date.length !== 4) {
-                return false
-            }
-            if (parseInt(date) < 2000 || parseInt(date) > 3000) {
-                return false
-            }
-        } else if (i===1) {
-            if (date.length !== 2) {
-                return false
-            }
-            if (parseInt(date) < 1 || parseInt(date) > 12) {
-                return false
-            }
-        } else if (i===2) {
-            if (date.length !== 2) {
-                return false
-            }
-            if (parseInt(date) < 1 || parseInt(date) > 31) {
-                return false
-            }
-        }
-    }
-    return true
-}
+// const dataCheker = function(value) {
+//     let format = value.split('-')
+//     if (format.length !== 3) {
+//         return false
+//     }
+//     for (let i=0;i<format.length;i++) {
+//         let date = format[i]
+//         if (!/^\d*$/.test(date)) {
+//             return false
+//         } else if (i===0) {
+//             if (date.length !== 4) {
+//                 return false
+//             }
+//             if (parseInt(date) < 2000 || parseInt(date) > 3000) {
+//                 return false
+//             }
+//         } else if (i===1) {
+//             if (date.length !== 2) {
+//                 return false
+//             }
+//             if (parseInt(date) < 1 || parseInt(date) > 12) {
+//                 return false
+//             }
+//         } else if (i===2) {
+//             if (date.length !== 2) {
+//                 return false
+//             }
+//             if (parseInt(date) < 1 || parseInt(date) > 31) {
+//                 return false
+//             }
+//         }
+//     }
+//     return true
+// }
 
 const Rules = {}
 
@@ -236,8 +236,68 @@ Rules.currency = (value, {validValue}) => {
 }
 
 // 需要为日期 yyyy-MM-dd
-Rules.date = value => {
-    return dataCheker(value) //!isNaN(Date.parse(value))
+function isValidDateString(str) {
+    if (typeof str !== 'string') return false
+    str = str.replace(/-/g,'/') // 为了兼容苹果系统把日期的 "-" 换成 "/"
+    return new Date(str).getDate() == date.split(' ')[0].substring(8) // 如果日期时间的 day 与文本时间的 day 相同表示该日期有效
+}
+Rules.date = (value, {validValue}) => {
+    // const strict = typeof validValue === 'object' ? Boolean(strict) : false // 是否为严格时间，如果为否仅验证格式不验证日期
+    // const min // 最小日期，会自动序列化，输入日期必须比该时间大
+    // const max // 最大日期，会自动序列化，输入日期必须比该时间小
+    // return dataCheker(value) // !isNaN(Date.parse(value))
+    const flag = /^[1-3]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/.test(value)
+    if (!flag) return false
+    // if (strict && !isValidDateString(value)) return false
+    return true
+}
+// 需要为时间 hh:mm:ss
+Rules.time = (value, {validValue}) => {
+    // const min // or 'start' 最小时间，输入时间总秒数必须比该时间大
+    // const max // or 'end' 最大时间，输入时间总秒数必须比该时间小
+    // const step // 步进值（意义不大），所选时间必须是步进值的倍数
+    // const format // 时间格式：12小时制 或 24小时制（默认）
+    const flag = /^(20|21|22|23|[0-1]\d):[0-5]\d:[0-5]\d$/.test(value)
+    if (!flag) return false
+    return true
+}
+// 需要为日期时间 yyyy-MM-dd hh:mm:ss
+Rules.datetime = (value, {validValue}) => {
+    // const strict 是否为严格时间，如果为否仅验证格式不验证日期
+    // const format // 时间格式：12小时制 或 24小时制（默认）
+    const flag = /^[1-3]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])\s+(20|21|22|23|[0-1]\d):[0-5]\d:[0-5]\d$/.test(value)
+    if (!flag) return false
+    // if (strict && !isValidDateString(value)) return false
+    return true
+}
+// 需要为日期范围 yyyy-MM-dd, yyyy-MM-dd
+Rules.dateRange = (value, {validValue}) => {
+    // const strict 是否为严格时间，如果为否仅验证格式不验证日期
+    // TODO 需要支持更多
+    let range;
+    if (typeof value === 'string') {
+        range = value.split(',')
+    } else if (Array.isArray(value)) {
+        range = Array.from(value)
+    } else {
+        return false
+    }
+    if (range.length !== 2) return false
+    return Rules.date(range[0], {validValue}) && Rules.date(range[1], {validValue})
+}
+// 需要为时间日期范围 yyyy-MM-dd hh:mm:ss, yyyy-MM-dd hh:mm:ss
+Rules.datetimeRange = (value, {validValue}) => {
+    // const strict 是否为严格时间，如果为否仅验证格式不验证日期
+    let range;
+    if (typeof value === 'string') {
+        range = value.split(',')
+    } else if (Array.isArray(value)) {
+        range = Array.from(value)
+    } else {
+        return false
+    }
+    if (range.length !== 2) return false
+    return Rules.datetime(range[0], {validValue}) && Rules.datetime(range[1], {validValue})
 }
 
 // 需要为小数，例如：0.1， .3， 1.1， 1.00003， 4.0
@@ -281,10 +341,10 @@ Rules.float = (value, {argName, validValue}) => {
     if (validValue === true) {
         return validator.isFloat(value)
     } else {
-        let flag = validator.isFloat(value, validValue)
+        const flag = validator.isFloat(value, validValue)
         if (flag) {
-            let {decimal} = validValue
-            let dec = `${value}`.split('.')
+            const {decimal} = validValue
+            const dec = `${value}`.split('.')
             if (decimal && dec[1] && dec[1].length > decimal) {
                 return {[argName]: `最多支持 ${decimal} 位小数`}
             }

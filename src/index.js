@@ -259,6 +259,7 @@ class Validator {
                 rule.value = ruleCtxQuery[argName] // 根据规则的 key 获取 ctx 上的 value
             }
 
+            // 仅在后端进行验证
             if (this.ctx) {
                 if (typeof rule.value === 'undefined') {
                     rule.value = rule.default // 若值无效则取规则中的默认值
