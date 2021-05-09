@@ -1,3 +1,7 @@
+## 0.0.5
+增加 - dateRange
+增加 - datetimeRange
+
 ## 0.0.4
 调整 - 调整 date 的规则
 新增 - 新增 time 的规则
