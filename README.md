@@ -1,3 +1,8 @@
+## 0.0.6
+如果是空参数（空字符串），在 rule.string = true 规则成立时会设置为 '', 其他情况下会以 undefined 处理
+在 int float 等与 length 混用时，若验证失败应该返回更为精确的错误信息
+    - 以增加规则，但是需要修改字符串
+
 ## 0.0.5
 增加 - dateRange
 增加 - datetimeRange

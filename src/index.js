@@ -2,8 +2,8 @@ const validator = require('validator')
 
 const pkg =  require('../package.json')
 const preRules = require('./rules.js')
-const errorsZh = require('./errors/zh.js')
-const errorsEn = require('./errors/en.js')
+const errorsZh = require('./errors/zh.js') // 中文错误提示
+const errorsEn = require('./errors/en.js') // 英文错误提示
 const METHOD_MAP = require('./method.js')
 
 const ARRAY_SP = '__array__'
@@ -17,25 +17,28 @@ class Validator {
     static version = pkg.version
     static rules = preRules
     static validator = validator
-    example
+
     constructor(ctx, config = {}) {
 
-        this.ctx = ctx // 前端没有 ctx
+        this.ctx = ctx // 仅 koa 后端架构中会存在 ctx，前端中没有 ctx
         this.version = pkg.version
 
+        // 继承默认设置
         const options = helper.extend({
-            requiredValidNames: ['required', 'requiredIf', 'requiredNotIf', 'requiredWith', 'requiredWithAll', 'requiredWithOut', 'requiredWithOutAll'],
-            skippedValidNames: ['value', 'default', 'trim', 'method', 'aliasName', 'title', 'description', 'mode'], // 运行跳过检查的字段
-            basicType: ['int', 'integer', 'string', 'float', 'array', 'object', 'boolean'], // 基本类型，最多既能同时存在一个
-            language: 'zh'
+            requiredValidNames: ['required', 'requiredIf', 'requiredNotIf', 'requiredWith', 'requiredWithAll', 'requiredWithOut', 'requiredWithOutAll'], // “必传” 规则校验字段
+            skippedValidNames: ['value', 'default', 'defaultDoc', 'trim', 'method', 'aliasName', 'title', 'description', 'mode'], // 运行跳过检查的字段
+            basicType: ['int', 'string', 'float', 'array', 'object', 'boolean'], // 基本类型，最多既能同时存在一个
+            language: 'zh' // 默认使用中文
         }, helper.isObject(config) ? config : {})
 
+        // 赋值设置信息
         const {language} = options
         this.requiredValidNames = options.requiredValidNames
         this.skippedValidNames = options.skippedValidNames.concat(this.requiredValidNames) 
         this.basicType = options.basicType
         this.language = language
         
+        // 设置语言包和报错信息
         const languages = {
             'zh': errorsZh,
             'en': errorsEn
@@ -61,11 +64,11 @@ class Validator {
     }
 
     _isErrorType(error) {
-        return error && (helper.isString(error) || helper.isFunction(error));
+        return error && (helper.isString(error) || helper.isFunction(error)) // error 信息是允许 function handler
     }
 
     // 验证失败后，用于获取失败提示信息
-    _getErrorMessage({argName, rule, rules, validName, parsedValidValue}) {
+    _getErrorMessage({argName, rule, rules, validName, parsedValidValue}, errType = '') {
         let errMsg = '';
         if (this.requiredValidNames.indexOf(validName) > -1) {
             validName = 'required';
@@ -73,20 +76,27 @@ class Validator {
         if (argName.indexOf(ARRAY_SP) > -1) {
             argName = argName.split(ARRAY_SP)[0];
         }
-        const validNameError = this.errors[validName];
-        if (this._isErrorType(validNameError)) {
-            errMsg = validNameError;
+
+        // 取验证名，一般验证名都会存在
+        if (errType && this._isErrorType(this.errors[`${validName}:${errType}`])) {
+            errMsg = this.errors[`${validName}:${errType}`]
+        } else if (this._isErrorType(this.errors[validName])) {
+            errMsg = this.errors[validName]
         }
 
-        // [error message]: { username: 'the error message' }
-        let argNameError = this.errors[argName];
+        // const validNameError = this.errors[validName] // 验证名
+        // if (this._isErrorType(validNameError)) {
+        //     errMsg = validNameError;
+        // }
+
+        let argNameError = this.errors[argName] // 字段名（如果字段名存在，则优先使用）
         if (this._isErrorType(argNameError)) {
             errMsg = argNameError;
         }
 
         // [error message]: { username: { string: 'the error message' } }
         if (helper.isObject(argNameError)) {
-            const validArgNameError = this.errors[argName][validName];
+            const validArgNameError = this.errors[argName][validName];  // 字段名 + 验证名（如果字段名 + 验证名存在，则高优先级使用）
             if (this._isErrorType(validArgNameError)) {
                 errMsg = validArgNameError;
             }
@@ -124,8 +134,9 @@ class Validator {
             return (rule.aliasName || originArgName) + WITHOUT_ERR_MESSAGE;
         }
 
-        const validValue = rule[validName];
+        const validValue = rule[validName]
 
+        // 支持自定义消息的功能
         // support function as the custom message
         if (helper.isFunction(errMsg)) {
             const lastErrorMsg = errMsg({
@@ -134,12 +145,12 @@ class Validator {
                 rule: rule,
                 args: validValue,
                 pargs: parsedValidValue
-            });
-            assert(helper.isString(lastErrorMsg), 'custom error function should return string.');
-            return lastErrorMsg;
+            })
+            assert(helper.isString(lastErrorMsg), 'custom error function should return string.')
+            return lastErrorMsg
         }
 
-        // string as the custom message
+        // 拼装模板字符串
         const lastErrorMsg = errMsg.replace('{name}', rule.aliasName || originArgName)
             .replace('{title}', rules[argName].title || rule.aliasName || originArgName)
             .replace('{args}', helper.isString(validValue) ? validValue : JSON.stringify(validValue))
@@ -149,7 +160,8 @@ class Validator {
 
     /**
      * 使用 validName 方法分析有效参数
-     * @return {Mixed}           [description]
+     * 某些字段需要和另外一个字段进行交叉对比的，在 Rules 中提供 _ 函数
+     * @return {Mixed} [description]
      */
     _parseValidValue(validName, rule, cloneRules, argName) {
         let validValue = rule[validName];
@@ -218,9 +230,9 @@ class Validator {
 
     /**
      * 获取规则启用方法
-     * @param  {Object} rule [description]
-     * @return {String}      [methodName]
-     * @description 仅在有 ctx 对象中有效
+     * 仅在有 ctx 对象下有效
+     * @param  {Object} rule - 验证规则
+     * @return {String} ‘param’ or 'post'
      */
     _getRuleMethod(rule) {
         if (this.ctx) {
@@ -236,32 +248,37 @@ class Validator {
 
     /**
      * 预处理规则
-     * @param  {object} rules 规则
-     * @param  {object} params 外部参数
-     * @description 会自动从 ctx 或 params 获取 value 并合并到 rules 中并返回
+     * 会自动从 ctx 或 params 获取 value 并合并到 rules 中并返回
+     * @param {object} rules - 规则
+     * @param {object} params - 外部参数
      */
     _preTreatRules(rules, params) {
 
         rules = helper.extend({}, rules)
+
         for (const argName in rules) {
 
-            const rule = rules[argName]
-            const queryMethod = this._getRuleMethod(rule) // 验证 method 类型
+            const rule = rules[argName] // 规则单条实例
+            const queryMethod = this._getRuleMethod(rule) // 验证 method 类型，仅在有 ctx 对象下有效
             const ruleCtxQuery = this.ctx ? this.ctx[queryMethod]() : params // 获取需要验证的数据包
+
+            // 一个字段仅能设置一个基本类型，否则会报错
             const containTypeNum = this.basicType.reduce((acc, val) => {
                 val = rule[val] ? 1 : 0;
                 return acc + val;
             }, 0)
             if (containTypeNum > 1) {
-                throw new Error('Any rule can\'t contains one more basic type, the param you are validing is ' + argName) // 基本类型检查
+                throw new Error('Any rule can\'t contains one more basic type, the param you are validing is ' + argName)
             }
+
+            // 获取验证值
             if (!rule.value) {
                 rule.value = ruleCtxQuery[argName] // 根据规则的 key 获取 ctx 上的 value
             }
 
             // 仅在后端进行验证
             if (this.ctx) {
-                if (typeof rule.value === 'undefined') {
+                if (typeof rule.value === 'undefined' || (rule.string && rule.value === "")) {
                     rule.value = rule.default // 若值无效则取规则中的默认值
                 }
                 if (rule.trim && rule.value && rule.value.trim) {
@@ -305,8 +322,15 @@ class Validator {
                 } else if (rule.boolean && typeof rule.value !== 'undefined') {
                     // 布尔值类型转换
                     rule.value = ['yes', 'on', '1', 'true', true].indexOf(rule.value) > -1;
+                } else if (rule.string && rule.value === "") {
+                    rule.value = undefined
                 }
+                // else if (!rule.string && rule.value === '') {
+                //     // 除了 rule.string = true 情况下，其他条件下不允许 value = ''
+                //     rule.value = undefined
+                // }
             }
+
             // 将转换过后的数据重新保存回 ctx 数据包
             if (typeof rule.value !== 'undefined') {
                 if (argName.indexOf(ARRAY_SP) !== -1 || argName.indexOf(OBJECT_SP) !== -1) {
@@ -315,8 +339,11 @@ class Validator {
                 } else {
                     ruleCtxQuery[argName] = rule.value
                 }
+            } else {
+                ruleCtxQuery[argName] = undefined // 某些字段可能会重置为 undefined
             }
         }
+
         return helper.extend({}, rules)
     }
 
@@ -331,18 +358,21 @@ class Validator {
     }
 
     /**
-     * 验证规则
-     * @param  {Object} rules [description]
-     * @param  {Object} msgs  [custom errors]
-     * @return {Object}       {argName: errorMessage}
+     * 验证规则（核心接口，业务调用入口）
+     * @param {Object} rules - 验证规则配置
+     * @param {Object} msgs - 错误返回信息
+     * @param {Object} _params 需要验证的参数，koa 下会自动从 ctx 中获取，其他情况需要手动传入
+     * @return {Object} {[argName]: errorMessage} 如果返回空对象 {}，表示全部字段验证通过
      */
     validate(rules, msgs, _params) {
-
-        let ret = {}
+        
+        let ret = {} // 返回体，如果某字段验证失败，错误信息将会记录在返回题中
         const cloneRules = helper.extend({}, rules) // 深拷贝一份规则
         const parsedRules = this._preTreatRules(rules, _params) // 对规则进行预处理，遍历所有规则，获取值后存储在 rule 的 value 中
         this.errors = helper.extend(this.errors, msgs) // 获取错误提示
+
         for (const argName in parsedRules) {
+
             const rule = parsedRules[argName]
             const params = {
                 argName, rule, rules: cloneRules,
@@ -358,8 +388,7 @@ class Validator {
                             const validName = this.requiredValidNames[i]
                             params.validName = validName
                             params.validValue = rule[validName]
-
-                            params.parsedValidValue = this._parseValidValue(validName, rule, cloneRules, argName)
+                            params.parsedValidValue = this._parseValidValue(validName, rule, cloneRules, argName) // 解析有效值
                             break;
                         }
                     }
@@ -370,6 +399,7 @@ class Validator {
                 }
             }
            
+            // 查询规则
             for (const validName in rule) {
 
                 // 部分字段运行直接跳过检查
@@ -389,10 +419,10 @@ class Validator {
                 
                 const result = fn(rule.value, params) // 进行验证
                 
-                if (result === false) {
+                if (result === false || typeof result === 'string') {
                     // 验证失败
                     const originArgName = this._getOriginArgName(argName) // 原始参数名
-                    ret[originArgName] = this._getErrorMessage(params) // 获取失败信息
+                    ret[originArgName] = this._getErrorMessage(params, result) // 获取失败信息
                     break;
                 } else if (helper.isObject(result)) { // custom valid failed for json-schema
                     ret = helper.extend({}, ret, result)

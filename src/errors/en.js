@@ -33,6 +33,7 @@ module.exports = {
     in: '{name} need in an array of {args}',
     notIn: '{name} need not in an array of {args}',
     int: '{name} need an integer under your options',
+    'int:range': '{name} is not within the specified range',
     length: '{name} should be length under your options',
     lowercase: '{name} should be lowercase',
     uppercase: '{name} should uppercase',

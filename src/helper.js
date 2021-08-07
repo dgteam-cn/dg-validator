@@ -72,7 +72,6 @@ module.exports = {
         return typeof obj === 'number' && obj % 1 === 0
     },
     isRegExp(obj) {
-        console.log(obj, Object.prototype.toString.call(obj))
         return Object.prototype.toString.call(obj) === '[object RegExp]'
     }
 }

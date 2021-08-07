@@ -471,13 +471,19 @@ Rules.notIn = (value, {validValue}) => {
 Rules.int = (value, {validValue}) => {
     assert(helper.isObject(validValue) || validValue === true, 'int\'s value should be object or true');
     value = validator.toString(value)
-    if (validValue === true) {
-        return validator.isInt(value)
-    } else {
-        return validator.isInt(value, validValue)
+    if (!validator.isInt(value)) return false
+    if (typeof validValue === "object") {
+        if (typeof validValue.min === 'number' && validValue.min > value) return 'range'
+        if (typeof validValue.max === 'number' && validValue.max < value) return 'range'
+        if (typeof validValue.lt === 'number' && validValue.lt <= value) return 'range'
+        if (typeof validValue.gt === 'number' && validValue.gt >= value) return 'range'
     }
+    // if (validValue === true) {
+    //     return validator.isInt(value)
+    // } else {
+    //     return validator.isInt(value, validValue)
+    // }
 }
-Rules.integer = (value, opt) => Rules.int(value, opt)
 
 // 长度需要在某个范围
 Rules.length = (value, {validValue, rule}) => {
