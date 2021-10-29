@@ -1,6 +1,6 @@
 {
   "name": "@dgteam/validator",
-  "version": "0.0.6",
+  "version": "0.1.0",
   "description": "",
   "author": "2681137811 <donguayx@qq.com>",
   "main": "src/index.js",
@@ -12,5 +12,8 @@
   "dependencies": {
     "validator": "~6.2.1"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "files": [
+    "src"
+  ]
 }

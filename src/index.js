@@ -26,7 +26,15 @@ class Validator {
         // 继承默认设置
         const options = helper.extend({
             requiredValidNames: ['required', 'requiredIf', 'requiredNotIf', 'requiredWith', 'requiredWithAll', 'requiredWithOut', 'requiredWithOutAll'], // “必传” 规则校验字段
-            skippedValidNames: ['value', 'default', 'defaultDoc', 'trim', 'method', 'aliasName', 'title', 'description', 'mode'], // 运行跳过检查的字段
+            skippedValidNames: ['value', 'default', 'defaultDoc', 'trim', 'method', 'aliasName', 'title', 'description', 'mode', 'allowNull'], // 运行跳过检查的字段
+            // value -> 校验值
+            // default -> 默认值
+            // defaultDoc -> 在接口文档中的默认值，若不存在则取 default
+            // trim -> 自动去除头尾空格，仅 string = true 情况下有效
+            // method -> 请求方式
+            // title -> 中文 name （用于生产 error 错误）
+            // description -> 在接口文档中字段说明
+            // mode -> 检查模式（用与 Logic 模块，和本模块无关）
             basicType: ['int', 'string', 'float', 'array', 'object', 'boolean'], // 基本类型，最多既能同时存在一个
             language: 'zh' // 默认使用中文
         }, helper.isObject(config) ? config : {})
@@ -278,6 +286,7 @@ class Validator {
 
             // 仅在后端进行验证
             if (this.ctx) {
+                
                 if (typeof rule.value === 'undefined' || (rule.string && rule.value === "")) {
                     rule.value = rule.default // 若值无效则取规则中的默认值
                 }
@@ -322,14 +331,12 @@ class Validator {
                 } else if (rule.boolean && typeof rule.value !== 'undefined') {
                     // 布尔值类型转换
                     rule.value = ['yes', 'on', '1', 'true', true].indexOf(rule.value) > -1;
-                } else if (rule.string && rule.value === "") {
+                } else if (!rule.string && rule.value === '') {
+                    // 除了 rule.string = true 情况下，其他条件下不允许 value = ''
                     rule.value = undefined
                 }
-                // else if (!rule.string && rule.value === '') {
-                //     // 除了 rule.string = true 情况下，其他条件下不允许 value = ''
-                //     rule.value = undefined
-                // }
             }
+            
 
             // 将转换过后的数据重新保存回 ctx 数据包
             if (typeof rule.value !== 'undefined') {

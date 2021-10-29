@@ -353,6 +353,10 @@ Rules.float = (value, {argName, validValue}) => {
     }
 }
 
+// Rules.multiple = (value, {argName, validValue}) => {
+
+// }
+
 // 需要包含宽字节字符
 Rules.fullWidth = value => {
     value = validator.toString(value)
@@ -564,7 +568,7 @@ Rules.url = (value, {validValue}) => {
     }
 }
 
-// 需要为数据库查询 order, 如：id ASC 、 name DESC
+// 需要为数据库查询 order, 如 'id ASC'  'name DESC' 或 'id ASC, name DESC'
 Rules.order = value => {
     return value.split(/\s*,\s*/).every(item => {
         return /^\w+\s+(?:ASC|DESC)$/i.test(item)
@@ -608,13 +612,10 @@ Rules.array = (value, {argName, validValue}) => {
         return false
     }
     if (validValue && typeof validValue === 'object') {
-        let {min, max} = validValue
-        if (min && value.length < min) {
-            return {[argName]: `数组长度不能小于 ${min}`}
-        }
-        if (max && value.length > max) {
-            return {[argName]: `数组长度不能大于 ${max}`}
-        }
+        if (typeof validValue.min === 'number' && validValue.min > value.length) return 'range'
+        if (typeof validValue.max === 'number' && validValue.max < value.length) return 'range'
+        if (typeof validValue.lt === 'number' && validValue.lt <= value.length) return 'range'
+        if (typeof validValue.gt === 'number' && validValue.gt >= value.length) return 'range'
     }
     return
 }

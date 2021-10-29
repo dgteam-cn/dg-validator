@@ -48,6 +48,7 @@ module.exports = {
     endWith: '{name} need end with {args}',
     string: '{name} need a string',
     array: '{name} need an array',
+    'array:range': '{name} is not within the specified range',
     boolean: '{name} need a boolean',
     object: '{name} need an object',
     regexp: '{name} need match your custom regexp',

@@ -48,6 +48,7 @@ module.exports =  {
     endWith: '{title}需要以 {args} 字符结尾',
     string: '{title}必须是字符串',
     array: '{title}必须是一个数组',
+    'array:range': '{name}长度不在指定范围内',
     boolean: '{title}必须是布尔值',
     object: '{title}必须是一个对象',
     regexp: '{title}格式无法通过验证',

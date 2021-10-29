@@ -1,3 +1,12 @@
+[新增] int 和 float 增加 multiple 字段
+
+## 0.1.0
+    [新增] allowNull 字段，允许 null 值，仅 json 格式支持，仅拥有 ctx 后端支持
+    
+## 0.0.7
+    调整 array 方法的验证不规范,和错误提示    
+    [新增] test 测试文件
+
 ## 0.0.6
 如果是空参数（空字符串），在 rule.string = true 规则成立时会设置为 '', 其他情况下会以 undefined 处理
 在 int float 等与 length 混用时，若验证失败应该返回更为精确的错误信息
