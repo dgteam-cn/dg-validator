@@ -8,6 +8,10 @@ const data = {
     // 'int.fail.min': 1,
     // 'int.fail.max': 100,
 
+    'float.fail.min': 1,
+    'float.fail.max': 101,
+    'float.fail.decimal': 10.55,
+
     'in.transform.empty': '',
     'in.correct': 1,
     'in.fail': 0,
@@ -49,6 +53,10 @@ const rules = {
     // 'int.correct.max': {int: {max: 30}},
     // 'int.fail.min': {int: {min: 5}},
     // 'int.fail.max': {int: {max: 30}},
+
+    'float.fail.min': {float:{min: 10, max: 100, decimal: 1}},
+    'float.fail.max': {float:{min: 10, max: 100, decimal: 1}},
+    'float.fail.decimal': {float:{min: 10, max: 100, decimal: 1}},
 
     'in.transform.empty': {in: [1, 2, 3], default: 1},
     'in.correct': {in: [1, 2, 3]},

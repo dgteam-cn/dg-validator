@@ -1,8 +1,9 @@
 {
   "name": "@dgteam/validator",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "",
   "author": "2681137811 <donguayx@qq.com>",
+  "keywords": ["dgteam", "dgteam.cn"],
   "main": "src/index.js",
   "scripts": {
     "push": "npm publish --access public",
@@ -13,6 +14,11 @@
     "validator": "~6.2.1"
   },
   "devDependencies": {},
+  "homepage": "https://github.com/dgteam-cn/validator",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dgteam-cn/validator"
+  },
   "files": [
     "src"
   ]

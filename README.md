@@ -1,7 +1,8 @@
-[新增] int 和 float 增加 multiple 字段
+[新增] int 和 float 增加 multiple 字段，验证是否为某值的倍数
 
 ## 0.1.0
     [新增] allowNull 字段，允许 null 值，仅 json 格式支持，仅拥有 ctx 后端支持
+    [新增] placeholder 字段在免检字段中
     
 ## 0.0.7
     调整 array 方法的验证不规范,和错误提示    

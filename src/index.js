@@ -1,4 +1,4 @@
-const validator = require('validator')
+// const validator = require('validator')
 
 const pkg =  require('../package.json')
 const preRules = require('./rules.js')
@@ -16,7 +16,7 @@ class Validator {
 
     static version = pkg.version
     static rules = preRules
-    static validator = validator
+    // static validator = validator
 
     constructor(ctx, config = {}) {
 
@@ -26,7 +26,7 @@ class Validator {
         // 继承默认设置
         const options = helper.extend({
             requiredValidNames: ['required', 'requiredIf', 'requiredNotIf', 'requiredWith', 'requiredWithAll', 'requiredWithOut', 'requiredWithOutAll'], // “必传” 规则校验字段
-            skippedValidNames: ['value', 'default', 'defaultDoc', 'trim', 'method', 'aliasName', 'title', 'description', 'mode', 'allowNull'], // 运行跳过检查的字段
+            skippedValidNames: ['value', 'default', 'defaultDoc', 'trim', 'method', 'aliasName', 'title', 'placeholder', 'description', 'mode', 'allowNull'], // 运行跳过检查的字段
             // value -> 校验值
             // default -> 默认值
             // defaultDoc -> 在接口文档中的默认值，若不存在则取 default

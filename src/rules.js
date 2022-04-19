@@ -345,16 +345,21 @@ Rules.float = (value, {argName, validValue}) => {
         if (flag) {
             const {decimal} = validValue
             const dec = `${value}`.split('.')
-            if (decimal && dec[1] && dec[1].length > decimal) {
-                return {[argName]: `最多支持 ${decimal} 位小数`}
-            }
+            if (decimal && dec[1] && dec[1].length > decimal) return 'decimal' // {[argName]: `最多支持 ${decimal} 位小数`}
         }
         return flag
     }
 }
 
 // Rules.multiple = (value, {argName, validValue}) => {
-
+//     if (value && typeof validValue === 'number') {
+//         try {
+//             if (big(value).mod(validValue).toString() === '0') {
+//                 return true
+//             }
+//         } catch (e) {}
+//     }
+//     return false
 // }
 
 // 需要包含宽字节字符
