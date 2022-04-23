@@ -343,17 +343,15 @@ Rules.checkbox = (value, {validValue}) => {
 
 // 长度需要在某个范围
 Rules.length = (value, {validValue, rule}) => {
-    assert(rule.string || rule.array, 'length\'s value must be string or array')
     if (rule.array) {
-        return Rules.array(value, {validValue})
+        return Rules.array(value, {validValue}) // 除了数组使用长度进行验证，其他当成字符串来处理
     } else {
         assert(isObject(validValue) || helper.isInt(validValue), 'length\'s value should be object or integer')
-        value = String(value)
         if (isObject(validValue)) {
-            return isLength(value, {min: validValue.min | 0, max: validValue.max})
+            return isLength(String(value), {min: validValue.min | 0, max: validValue.max})
         } else {
             assert(validValue > 0, 'length\'s value should be integer larger than zero')
-            return isLength(value, {min: validValue, max: validValue})
+            return isLength(String(value), {min: validValue, max: validValue})
         }
     }
 }

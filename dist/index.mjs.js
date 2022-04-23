@@ -1919,17 +1919,15 @@ Rules.length = function (value, ref) {
     var validValue = ref.validValue;
     var rule = ref.rule;
 
-    assert(rule.string || rule.array, 'length\'s value must be string or array');
     if (rule.array) {
-        return Rules.array(value, {validValue: validValue})
+        return Rules.array(value, {validValue: validValue}) // 除了数组使用长度进行验证，其他当成字符串来处理
     } else {
         assert(isObject(validValue) || isInt(validValue), 'length\'s value should be object or integer');
-        value = String(value);
         if (isObject(validValue)) {
-            return isLength(value, {min: validValue.min | 0, max: validValue.max})
+            return isLength(String(value), {min: validValue.min | 0, max: validValue.max})
         } else {
             assert(validValue > 0, 'length\'s value should be integer larger than zero');
-            return isLength(value, {min: validValue, max: validValue})
+            return isLength(String(value), {min: validValue, max: validValue})
         }
     }
 };
@@ -2046,7 +2044,6 @@ var Validator = function Validator(config) {
 Validator.prototype._getErrorMessage = function _getErrorMessage (ref, ref$1) {
         var argName = ref.argName;
         var rule = ref.rule;
-        ref.rules;
         var validName = ref.validName;
         var parsedValidValue = ref.parsedValidValue;
         if ( ref$1 === void 0 ) ref$1 = {};
@@ -2201,7 +2198,6 @@ Validator.prototype._preTreatRule = function _preTreatRule (originRule, value, a
     }
 
     if (!this.strict) {
-
 
         if (rule.value === undefined || rule.string && rule.value === '') {
             rule.value = rule.default; // 若值无效则取规则中的默认值（null 属于有效值，所以仅判断 undefined 和 ''）
@@ -2423,7 +2419,7 @@ Validator.Messages = Messages;
 Validator.Rules = Rules;
 
 var index = {
-    version: '0.2.0',
+    version: '0.2.1',
     Validator: Validator,
     Messages: Messages,
     Rules: Rules

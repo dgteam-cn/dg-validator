@@ -1,6 +1,6 @@
 {
   "name": "@dgteam/validator",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "",
   "author": "2681137811 <donguayx@qq.com>",
   "keywords": [
@@ -16,10 +16,12 @@
       "import": "./src/index.js"
     },
     "./package.json": "./package.json",
-    "./dist/*": "./dist/*"
+    "./dist/*": "./dist/*",
+    "./messages/*": "./messages/*"
   },
   "scripts": {
     "build": "node scripts/build.js",
+    "lint": "npx eslint src test",
     "test": "npx mocha --require intelli-espower-loader test/rules/index.js",
     "push": "npm publish --access public",
     "reset": "rimraf node_modules"

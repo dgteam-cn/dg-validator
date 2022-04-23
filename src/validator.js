@@ -44,7 +44,7 @@ class Validator {
      * @param {String} errType - 错误类型
      * @returns
      */
-    _getErrorMessage({argName, rule, rules, validName, parsedValidValue}, {messages = {}, locale, errType = ''} = {}) {
+    _getErrorMessage({argName, rule, validName, parsedValidValue}, {messages = {}, locale, errType = ''} = {}) {
 
         const _isErrorType = error => error && (isString(error) || isFunction(error)) // error 信息是允许 function handler
         if (this.requiredValidNames.indexOf(validName) > -1) {
@@ -186,7 +186,6 @@ class Validator {
         }
 
         if (!this.strict) {
-
 
             if (rule.value === undefined || rule.string && rule.value === '') {
                 rule.value = rule.default // 若值无效则取规则中的默认值（null 属于有效值，所以仅判断 undefined 和 ''）

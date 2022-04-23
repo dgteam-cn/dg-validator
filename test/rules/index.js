@@ -42,12 +42,19 @@ const data = {
     'correct.hash.md5': {value: 'c520855f2515dbc130884c2ab5a8abfe', rule: {hash: 'md5'}},
     'correct.mimeType': {value: 'image/png', rule: {mimeType: true}},
 
-    'correct.empty.int': {value: '', rule: {int: true}},
-    'correct.empty.float': {value: '', rule: {float: true}},
-    'correct.empty.boolean': {value: '', rule: {boolean: true}},
-    'correct.empty.string': {value: '', rule: {string: true}},
-    'correct.empty.array': {value: '', rule: {array: true}},
-    'correct.empty.object': {value: '', rule: {object: true}},
+    'correct.empty.int': {value: undefined, rule: {int: true}},
+    'correct.empty.float': {value: undefined, rule: {float: true}},
+    'correct.empty.boolean': {value: undefined, rule: {boolean: true}},
+    'correct.empty.string': {value: undefined, rule: {string: true}},
+    'correct.empty.array': {value: undefined, rule: {array: true}},
+    'correct.empty.object': {value: undefined, rule: {object: true}},
+
+    'correct.empty.string.int': {value: '', rule: {int: true}},
+    'correct.empty.string.float': {value: '', rule: {float: true}},
+    'correct.empty.string.boolean': {value: '', rule: {boolean: true}},
+    'correct.empty.string.string': {value: '', rule: {string: true}},
+    'correct.empty.string.array': {value: '', rule: {array: true}},
+    'correct.empty.string.object': {value: '', rule: {object: true}},
 
     'correct.in': {value: true, rule: {in: [1, 'false', true]}},
     'correct.notIn': {value: 2, rule: {notIn: [1, 'false', true]}},
@@ -69,6 +76,10 @@ const data = {
     'correct.length.string': {value: '55555', rule: {string: true, length: {min: 1, max: 10}}},
     'correct.length.string.mix': {value: '55555', rule: {string: true, length: {min: 1}}},
     'correct.length.string.max': {value: '55555', rule: {string: true, length: {max: 10}}},
+    'correct.length.object': {value: {a: 1}, rule: {length: {max: 100}}},
+    'correct.length.number': {value: 12345, rule: {length: {max: 100}}},
+    'correct.length.boolean': {value: false, rule: {length: {max: 100}}},
+    'correct.length.fun': {value: new Function(), rule: {length: {max: 100}}},
 
     'correct.boolean': {value: 'false', rule: {boolean: true}},
     'correct.regexp': {value: '123456', rule: {regexp: /^[0-9]*$/}},
@@ -187,6 +198,7 @@ const data = {
     'fail.length.string': {value: '5', rule: {string: true, length: 5}},
     'fail.length.string.min': {value: '555', rule: {string: true, length: {min: 5}}},
     'fail.length.string.max': {value: '555', rule: {string: true, length: {max: 2}}},
+    'fail.length.object': {value: {a: 1}, rule: {length: {max: 10}}},
 
     'fail.boolean': {value: 'not boolean', rule: {boolean: true}},
     'fail.regexp': {value: '123a', rule: {regexp: /^[0-9]*$/}},
@@ -244,7 +256,9 @@ for (const key in data) {
 const res = examiner.checkup(rules, values, {messages})
 
 
+// eslint-disable-next-line no-console
 console.table(res.errors)
+// eslint-disable-next-line no-console
 console.log(res.result)
 
 describe('规则测试', () => {
@@ -257,7 +271,7 @@ describe('规则测试', () => {
     describe(`所有字段共计: ${total}, 所有规则总计: ${ruleKeys.length} (有效规则: ${ruleValidKeys.length}, 普通规则: ${ruleNormalKeys.length}, 辅助规则: ${ruleKeys.length - ruleValidKeys.length})`, () => {
 
         const successTotal = Object.keys(data).filter(row => row.indexOf('correct') === 0).length
-        const successValidTotal = Object.keys(data).filter(row => row.indexOf('correct') === 0 && (data[row].value || row === 'correct.empty.array')).length
+        const successValidTotal = Object.keys(data).filter(row => row.indexOf('correct') === 0 && (data[row].value || row === 'correct.empty.string.array' || data[row].value === false || data[row].value === null)).length
         const successReal = Object.keys(res.result).length
         it(`验证合法匹配: ${successReal}/${successValidTotal}/${successTotal}`, () => {
             assert(successReal === successValidTotal)
