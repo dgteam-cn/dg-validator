@@ -49,5 +49,5 @@
     "regexp": "{name} need match your custom regexp",
     "array": "{name} need an array",
     "array:range": "{name} is not within the specified range",
-    "object": "{name} need an object"   
+    "object": "{name} need an object"
 }

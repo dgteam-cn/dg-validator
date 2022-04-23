@@ -45,9 +45,9 @@
     "endWith": "{name} 需要以 {args} 字符结尾",
     "string": "{name} 必须是字符串",
     "string:length": "{name} 长度有误",
-    "boolean": "{name} 必须是布尔值",   
+    "boolean": "{name} 必须是布尔值",
     "regexp": "{name} 格式无法通过验证",
     "array": "{name} 必须是一个数组",
     "array:range": "{name} 长度不在指定范围内",
-    "object": "{name} 必须是一个对象"   
+    "object": "{name} 必须是一个对象"
 }

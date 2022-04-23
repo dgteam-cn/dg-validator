@@ -308,7 +308,7 @@ class Validator {
                         }
 
                         const fn = Rules[validName]  // 如果没有对应的检查方法，则直接抛出错误
-                        if (!isFunction(fn)) throw new Error(validName + ' valid method is not been configed')
+                        if (!isFunction(fn)) throw new Error(`"${validName}" valid method is not been configed`)
 
                         gather.validName = validName
                         gather.validValue = rule[validName]
