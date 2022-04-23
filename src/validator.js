@@ -333,6 +333,9 @@ class Validator {
                                 })
                                 return errors
                             }
+                        } else if (rule.int || rule.float || rule.numeric) {
+                            // 把已经成功验证的 int 与 float 进行转化
+                            rule.value = parseFloat(rule.value)
                         }
                     }
                 }

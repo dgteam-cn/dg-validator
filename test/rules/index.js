@@ -56,6 +56,14 @@ const data = {
     'correct.empty.string.array': {value: '', rule: {array: true}},
     'correct.empty.string.object': {value: '', rule: {object: true}},
 
+    'correct.parse.string.int': {value: '1', rule: {int: true}},
+    'correct.parse.string.float': {value: '1.25', rule: {float: true}},
+    'correct.parse.string.boolean': {value: 'false', rule: {boolean: true}},
+    'correct.parse.number.string': {value: 123, rule: {string: true}},
+    'correct.parse.string.array': {value: '"[1]"', rule: {array: true}},
+    'correct.parse.string.object': {value: "{}", rule: {object: true}},
+    'correct.parse.children.string.int': {value: {age: '66'}, rule: {object: true, children: {age: {int: true}}}},
+
     'correct.in': {value: true, rule: {in: [1, 'false', true]}},
     'correct.notIn': {value: 2, rule: {notIn: [1, 'false', true]}},
     'correct.checkbox': {value: [1, 2, 3], rule: {checkbox: [1, 2, 3, 4, 5]}},
@@ -262,6 +270,16 @@ console.table(res.errors)
 console.log(res.result)
 
 describe('规则测试', () => {
+
+    describe('字符串格式转化', () => {
+        it('string => int', () => assert(typeof res.result['correct.parse.string.int'] === 'number'))
+        it('string => float', () => assert(typeof res.result['correct.parse.string.float'] === 'number'))
+        it('string => boolean', () => assert(typeof res.result['correct.parse.string.boolean'] === 'boolean'))
+        it('number => string', () => assert(typeof res.result['correct.parse.number.string'] === 'string'))
+        it('string => array', () => assert(typeof res.result['correct.parse.string.array'] === 'object' && res.result['correct.parse.string.array'].length >= 0))
+        it('string => object', () => assert(typeof res.result['correct.parse.string.object'] === 'object'))
+        it('children | string => object', () => assert(typeof res.result['correct.parse.children.string.int'].age === 'number'))
+    })
 
     const ruleKeys = Object.keys(Rules)
     const ruleValidKeys = ruleKeys.filter(name => name[0] !== '_')

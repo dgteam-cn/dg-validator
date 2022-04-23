@@ -2355,6 +2355,9 @@ Validator.prototype.validate = function validate (rules, params, ref) {
                             });
                             return errors
                         }
+                    } else if (rule.int || rule.float || rule.numeric) {
+                        // 把已经成功验证的 int 与 float 进行转化
+                        rule.value = parseFloat(rule.value);
                     }
                 }
             };
@@ -2419,7 +2422,7 @@ Validator.Messages = Messages;
 Validator.Rules = Rules;
 
 var index = {
-    version: '0.2.1',
+    version: '0.2.2',
     Validator: Validator,
     Messages: Messages,
     Rules: Rules
