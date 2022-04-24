@@ -18,14 +18,11 @@ class Validator {
 
         // 继承默认设置
         const opts = extend({
-            ignoreRuleKeys: extend([], config.ignoreRuleKeys),
-            // origin: ['value', 'default', 'trim', 'method', 'aliasName']
-            // engine: ['title', 'placeholder', 'defaultDoc', 'description', 'mode']
-            // new: ['title']
+            ignoreRuleKeys: extend([], config.ignoreRuleKeys), // origin: ['value', 'default', 'trim', 'method', 'aliasName']; engine: ['title', 'placeholder', 'defaultDoc', 'description', 'mode']; new: ['title']
             locale: 'zh', // 默认使用中文
-            // messages: extend({}, config.messages),
-            strict: false,
-            assert: undefined
+            strict: false, // 是否启用严格模式
+            stringEmpty: true, // 是否允许空字符串，当 '' 是否被判定为 undefined 处理（非 rule.string 与 rule.array 会强制以 undefined 处理）
+            assert: undefined // [未实装] 断言库
         }, isObject(config) ? config : {})
 
         // 赋值设置信息locale
@@ -33,7 +30,8 @@ class Validator {
         this.requiredValidNames = ['required', 'requiredIf', 'requiredNotIf', 'requiredWith', 'requiredWithAll', 'requiredWithOut', 'requiredWithOutAll'] // 必穿参数验证
         this.ignoreRuleKeys = ['value', 'default', 'trim', 'aliasName', 'children', 'allowNull'].concat(this.requiredValidNames).concat(opts.ignoreRuleKeys)
         this.locale = opts.locale
-        this.strict = opts.strict
+        this.strict = opts.strict // 是否严格模式
+        this.stringEmpty = opts.stringEmpty
         this.assert = opts.assert
     }
 
@@ -154,20 +152,21 @@ class Validator {
     /**
      * 预处理规则
      * 会自动从 ctx 或 params 获取 value 并合并到 rules 中并返回
-     * @param {object} rules - 规则
-     * @param {object} gather - 外部参数
+     * @param {Object} rules - 规则
+     * @param {Object} gather - 外部参数
+     * @param {Boolean} opts.isDeep - 是否为深度对象
+     * @param {Boolean} opts.stringEmpty - 是否允许空字符串（不允许会以 undefined 处理）
      */
-    _preTreatRules(originRules, gather, {isDeep} = {}) {
-        // const _rules = extend({}, rules)
+    _preTreatRules(originRules, gather, {isDeep, stringEmpty} = {}) {
         const rules = {}
         const _gather = isDeep ? gather : extend({}, gather) // 深层对象保留引用关系
         for (const argName in originRules) {
             const value = _gather[argName]
-            rules[argName] = this._preTreatRule(originRules[argName], value, argName) // 规则单条实例
+            rules[argName] = this._preTreatRule(originRules[argName], value, argName, {stringEmpty}) // 规则单条实例
         }
         return rules
     }
-    _preTreatRule(originRule, value, argName) {
+    _preTreatRule(originRule, value, argName, {stringEmpty} = {}) {
 
         const rule = extend({}, originRule)
 
@@ -181,23 +180,22 @@ class Validator {
             throw new Error('Any rule can\'t contains one more basic type, the param you are validing is ' + argName)
         }
 
-        if (!rule.value) {
+        if (rule.value === undefined) {
             rule.value = value  // 获取验证值
         }
 
         if (!this.strict) {
 
-            if (rule.value === undefined || rule.string && rule.value === '') {
+            if ((rule.value === undefined || rule.string && rule.value === '') && rule.default !== undefined) {
                 rule.value = rule.default // 若值无效则取规则中的默认值（null 属于有效值，所以仅判断 undefined 和 ''）
             }
-            if (!rule.string && rule.value === '') {
-                if (rule.array) {
+            if (rule.value === '' && !rule.string) {
+                if (stringEmpty && rule.array) {
                     rule.value = [] // 特殊规则，如果是空字符串，会自动转为空数组
                 } else {
                     rule.value = undefined // 除了 rule.string = true 情况下，其他条件 value = '' 时转换为 undefined
                 }
             }
-
             if (rule.string) {
                 // 字符串预处理
                 if (typeof rule.value !== 'string' && rule.value && typeof rule.value.toString === 'function') {
@@ -232,8 +230,6 @@ class Validator {
                                 rule.value = [rule.value]
                             }
                         }
-                    } else {
-                        rule.value = undefined
                     }
                 }
             } else if (rule.object) {
@@ -259,8 +255,9 @@ class Validator {
      * @param {Object} opts.messages 错误消息模板文件
      * @return {Object} {[argName]: errorMessage} 如果返回空对象 {}，表示全部字段验证通过
      */
-    validate(rules, params, {messages, locale, ctx} = {}) {
+    validate(rules, params, {messages, locale, stringEmpty, ctx} = {}) {
 
+        if (stringEmpty === undefined) stringEmpty = this.stringEmpty
 
         const deepInspect = (rules, params, path = '') => {
             const paths = path ? path.split('.') : []
@@ -269,14 +266,12 @@ class Validator {
             const result = {} // 已验证成功的字段（存在于 params 但没有验证的不会出现在 result 对象中）
             const errors = {} // 返回体，如果某字段验证失败，错误信息将会记录在返回题中
 
-            const parsedRules = this._preTreatRules(rules, params, {isDeep: level > 0}) // 对规则进行预处理，遍历所有规则，获取值后存储在 rule 的 value 中
-
+            const parsedRules = this._preTreatRules(rules, params, {isDeep: level > 0, stringEmpty}) // 对规则进行预处理，遍历所有规则，获取值后存储在 rule 的 value 中
             for (const argName in parsedRules) {
-                const rule = parsedRules[argName]
 
+                const rule = parsedRules[argName]
                 const gather = {argName, rule, rules: parsedRules, ctx, path}
 
-                // 必选字段检查 rule.required
                 if (isTrueEmpty(rule.value)) {
                     if (this._isArgRequired(gather)) {
                         for (let i = 0; i < this.requiredValidNames.length; i++) {
@@ -289,7 +284,13 @@ class Validator {
                             }
                         }
                         errors[argName] = this._getErrorMessage(gather)
-                        continue
+                    }
+                    if (stringEmpty && rule.string && rule.value === '') {
+                        if (errors[argName]) {
+                            continue
+                        } else {
+                            //   result[argName] = '' // string 类型下的 '' 也要赋予在 result 中
+                        }
                     } else {
                         continue
                     }
@@ -314,6 +315,7 @@ class Validator {
                         if (parsedRules) gather.parsedValidValue = this._parseValidValue({validName, rule, rules: parsedRules, argName, ctx}) // 有些字段需要和另一个字段进行对比的， parsedValidValue 为需要对比的有效值
 
                         const verified = fn(rule.value, gather) // 进行验证, 返回 false string object 都算失败，返回 undefined null true 等为成功
+
                         if (verified === false || typeof verified === 'string') {
                             return {[argName]: this._getErrorMessage(gather, {messages, locale, errType: verified})} // 获取失败信息
                         } else if (isObject(verified)) {
@@ -349,7 +351,7 @@ class Validator {
                             for (let index = 0; index < rule.value.length; index ++ ) {
                                 const item = rule.value[index]
                                 const nextPath = `${path}${path ? '.' : ''}${argName}.${index}`
-                                const parsedRule = this._preTreatRule(rule.children, item, nextPath)
+                                const parsedRule = this._preTreatRule(rule.children, item, nextPath, {stringEmpty})
                                 const gather = {argName: nextPath, rule: parsedRule, rules: {children: parsedRule}, ctx, path: nextPath}
                                 const childrenErrors = deepInspectRule(parsedRule, null, gather, nextPath)
                                 if (childrenErrors && Object.keys(childrenErrors).length > 0) {

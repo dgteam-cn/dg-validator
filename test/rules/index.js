@@ -56,11 +56,14 @@ const data = {
     'correct.empty.string.array': {value: '', rule: {array: true}},
     'correct.empty.string.object': {value: '', rule: {object: true}},
 
+    'correct.parse.number.string': {value: 123, rule: {string: true}},
+    'correct.parse.boolean.string': {value: true, rule: {string: true}},
+    'correct.parse.array.string': {value: ['1'], rule: {string: true}},
+    'correct.parse.object.string': {value: {}, rule: {string: true}},
     'correct.parse.string.int': {value: '1', rule: {int: true}},
     'correct.parse.string.float': {value: '1.25', rule: {float: true}},
     'correct.parse.string.boolean': {value: 'false', rule: {boolean: true}},
-    'correct.parse.number.string': {value: 123, rule: {string: true}},
-    'correct.parse.string.array': {value: '"[1]"', rule: {array: true}},
+    'correct.parse.string.array': {value: "[1]", rule: {array: true}},
     'correct.parse.string.object': {value: "{}", rule: {object: true}},
     'correct.parse.children.string.int': {value: {age: '66'}, rule: {object: true, children: {age: {int: true}}}},
 
@@ -185,6 +188,15 @@ const data = {
     'fail.hash.md5': {value: 'c520855f2515dbc13084c2ab5a8abfs_', rule: {hash: 'md5'}},
     'fail.mimeType': {value: 'image/*', rule: {mimeType: true}},
 
+    'fail.parse.symbol.int': {value: Symbol('symbol'), rule: {int: true}},
+    'fail.parse.function.int': {value: new Function(), rule: {int: true}},
+    'fail.parse.string.int': {value: '1a', rule: {int: true}},
+    'fail.parse.boolean.int': {value: true, rule: {int: true}},
+    'fail.parse.array.int': {value: [], rule: {int: true}},
+    'fail.parse.object.int': {value: {}, rule: {int: true}},
+    'fail.parse.int.object': {value: 1, rule: {object: true}},
+    'fail.parse.int.array': {value: 1, rule: {object: true}},
+
     'fail.in': {value: false, rule: {in: [1, 'false', true]}},
     'fail.notIn': {value: 1, rule: {notIn: [1, 'false', true]}},
     'fail.checkbox': {value: [1, 2, 3, 6], rule: {checkbox: [1, 2, 3, 4, 5]}},
@@ -204,6 +216,7 @@ const data = {
     'fail.float.decimal': {value: '5.555', rule: {float: {decimal: 2}}},
 
     'fail.length.string': {value: '5', rule: {string: true, length: 5}},
+    'fail.length.string.empty': {value: '', rule: {string: true, length: {min: 1}}},
     'fail.length.string.min': {value: '555', rule: {string: true, length: {min: 5}}},
     'fail.length.string.max': {value: '555', rule: {string: true, length: {max: 2}}},
     'fail.length.object': {value: {a: 1}, rule: {length: {max: 10}}},
@@ -252,7 +265,10 @@ const data = {
     }
 }
 
-const examiner = new Validator()
+const stringEmpty = true
+const examiner = new Validator({
+    stringEmpty
+})
 const values = {}
 const rules = {}
 const messages = {}
@@ -288,19 +304,44 @@ describe('规则测试', () => {
 
     describe(`所有字段共计: ${total}, 所有规则总计: ${ruleKeys.length} (有效规则: ${ruleValidKeys.length}, 普通规则: ${ruleNormalKeys.length}, 辅助规则: ${ruleKeys.length - ruleValidKeys.length})`, () => {
 
-        const successTotal = Object.keys(data).filter(row => row.indexOf('correct') === 0).length
-        const successValidTotal = Object.keys(data).filter(row => row.indexOf('correct') === 0 && (data[row].value || row === 'correct.empty.string.array' || data[row].value === false || data[row].value === null)).length
-        const successReal = Object.keys(res.result).length
-        it(`验证合法匹配: ${successReal}/${successValidTotal}/${successTotal}`, () => {
-            assert(successReal === successValidTotal)
+        const hasMeaning = key => {
+            const {value, rule} = data[key]
+            if (value === '' && rule) {
+                if (stringEmpty && (rule.string || rule.array)) {
+                    return true
+                }
+            }
+            return !(value === undefined || value === '' || typeof value === 'number' && isNaN(value))
+        }
+
+        const successTotal = Object.keys(data).filter(key => key.indexOf('correct') === 0)
+        const successValidTotal = successTotal.filter(key => hasMeaning(key))
+        const successReals = Object.keys(res.result)
+        const successStatis = {total: successTotal.length, valid: successValidTotal.length, real: successReals.length}
+        it(`验证合法匹配: ${successStatis.real}/${successStatis.valid}/${successStatis.total}`, () => {
+            assert(successStatis.real === successStatis.valid)
         })
 
-        const errorsTotal = Object.keys(data).filter(row => row.indexOf('fail') === 0).length
-        const errorsReal = Object.keys(res.errors).length
-        it(`验证非法匹配: ${errorsReal}/${errorsTotal}`, () => {
-            assert(errorsReal === errorsTotal)
+        const errorsTotal = Object.keys(data).filter(key => key.indexOf('fail') === 0)
+        const errorsValidTotal = errorsTotal.filter(key => hasMeaning(key))
+        const errorsReals = Object.keys(res.errors)
+        const errorsStatis = {total: errorsTotal.length, valid: errorsValidTotal.length, real: errorsReals.length}
+        it(`验证非法匹配: ${errorsStatis.real}/${errorsStatis.valid}/${errorsStatis.total}`, () => {
+            assert(errorsStatis.real === errorsStatis.valid)
         })
 
+        const successFilter = successValidTotal.filter(key => !successReals.find(_row => _row === key))
+        const successMistake = successReals.filter(key => key.indexOf('fail') === 0)
+        const errorsMistake = errorsReals.filter(key => key.indexOf('correct') === 0)
+        if (successFilter.concat(successMistake).concat(errorsMistake).length) {
+            setTimeout(() => {
+                // eslint-disable-next-line no-console
+                console.log('\n错误', {successFilter, successMistake, errorsMistake}, '\n\n')
+            }, 250)
+        }
+
+        // console.log('hasMeaning', {stringEmpty}, hasMeaning('fail.length.string.empty'))
+        // console.log({errorsTotal, errorsReals})
     })
 })
 

@@ -300,7 +300,7 @@ Rules.mimeType = value => isString(value) && isMimeType(value)
 // 在某些值中
 Rules.in = (value, {validValue}) => {
     assert(isArray(validValue), 'in\'s value should be array')
-    if (Object.prototype.toString.call(validValue) === '[object Array]') {
+    if (isArray(validValue)) {
         // const array = []
         // for (let i in validValue) {
         //     if (Object.prototype.hasOwnProperty.call(validValue, i)) {

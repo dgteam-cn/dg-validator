@@ -1,5 +1,4 @@
-import {Validator, Messages} from './validator'
-import {Rules} from './rules'
+import {Validator, Messages, Rules} from './lib/validator'
 export default {
     version: '__VERSION__',
     Validator,

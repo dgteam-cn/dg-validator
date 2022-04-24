@@ -44,8 +44,8 @@ function toString(input) {
         } else {
             input = '[object Object]'
         }
-    } else if (input === null || typeof input === 'undefined' || isNaN(input) && !input.length) {
-        input = ''
+    } else if (input === null || input === undefined || isNaN(input) && !input.length) {
+        input = '' // 由于 null 有意义，此步骤需要重新考虑
     }
     return String(input)
 }
@@ -71,8 +71,12 @@ function getProperty(obj, path) {
     return undefined
 }
 
+function isTrueNaN(obj) {
+    return typeof obj === 'number' && isNaN(obj)
+}
+
 function isTrueEmpty(obj) {
-    return !!(obj === undefined || obj === '' || Number.isNaN(obj)) // null 在 mysql 等数据库中有意义，所以不能算无效值
+    return !!(obj === undefined || obj === '' || isTrueNaN(obj)) // null 在 mysql 等数据库中有意义，所以不能算无效值
 }
 
 function isFunction(obj) {
@@ -113,6 +117,7 @@ export {
     extend,
     toString,
     getProperty,
+    isTrueNaN,
     isTrueEmpty,
     isFunction,
     isArray,

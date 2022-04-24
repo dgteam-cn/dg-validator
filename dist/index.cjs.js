@@ -1474,8 +1474,12 @@ function extend(target) {
     return target
 }
 
+function isTrueNaN(obj) {
+    return typeof obj === 'number' && isNaN(obj)
+}
+
 function isTrueEmpty$1(obj) {
-    return !!(obj === undefined || obj === '' || Number.isNaN(obj)) // null 在 mysql 等数据库中有意义，所以不能算无效值
+    return !!(obj === undefined || obj === '' || isTrueNaN(obj)) // null 在 mysql 等数据库中有意义，所以不能算无效值
 }
 
 function isFunction(obj) {
@@ -1871,7 +1875,7 @@ Rules.in = function (value, ref) {
     var validValue = ref.validValue;
 
     assert(isArray(validValue), 'in\'s value should be array');
-    if (Object.prototype.toString.call(validValue) === '[object Array]') {
+    if (isArray(validValue)) {
         // const array = []
         // for (let i in validValue) {
         //     if (Object.prototype.hasOwnProperty.call(validValue, i)) {
@@ -2017,14 +2021,11 @@ var Validator = function Validator(config) {
 
     // 继承默认设置
     var opts = extend({
-        ignoreRuleKeys: extend([], config.ignoreRuleKeys),
-        // origin: ['value', 'default', 'trim', 'method', 'aliasName']
-        // engine: ['title', 'placeholder', 'defaultDoc', 'description', 'mode']
-        // new: ['title']
+        ignoreRuleKeys: extend([], config.ignoreRuleKeys), // origin: ['value', 'default', 'trim', 'method', 'aliasName']; engine: ['title', 'placeholder', 'defaultDoc', 'description', 'mode']; new: ['title']
         locale: 'zh', // 默认使用中文
-        // messages: extend({}, config.messages),
-        strict: false,
-        assert: undefined
+        strict: false, // 是否启用严格模式
+        stringEmpty: true, // 是否允许空字符串，当 '' 是否被判定为 undefined 处理（非 rule.string 与 rule.array 会强制以 undefined 处理）
+        assert: undefined // [未实装] 断言库
     }, isObject$1(config) ? config : {});
 
     // 赋值设置信息locale
@@ -2032,7 +2033,8 @@ var Validator = function Validator(config) {
     this.requiredValidNames = ['required', 'requiredIf', 'requiredNotIf', 'requiredWith', 'requiredWithAll', 'requiredWithOut', 'requiredWithOutAll']; // 必穿参数验证
     this.ignoreRuleKeys = ['value', 'default', 'trim', 'aliasName', 'children', 'allowNull'].concat(this.requiredValidNames).concat(opts.ignoreRuleKeys);
     this.locale = opts.locale;
-    this.strict = opts.strict;
+    this.strict = opts.strict; // 是否严格模式
+    this.stringEmpty = opts.stringEmpty;
     this.assert = opts.assert;
 };
 
@@ -2165,23 +2167,28 @@ Validator.prototype._isArgRequired = function _isArgRequired (gather) {
 /**
  * 预处理规则
  * 会自动从 ctx 或 params 获取 value 并合并到 rules 中并返回
- * @param {object} rules - 规则
- * @param {object} gather - 外部参数
+ * @param {Object} rules - 规则
+ * @param {Object} gather - 外部参数
+ * @param {Boolean} opts.isDeep - 是否为深度对象
+ * @param {Boolean} opts.stringEmpty - 是否允许空字符串（不允许会以 undefined 处理）
  */
 Validator.prototype._preTreatRules = function _preTreatRules (originRules, gather, ref) {
         if ( ref === void 0 ) ref = {};
         var isDeep = ref.isDeep;
+        var stringEmpty = ref.stringEmpty;
 
-    // const _rules = extend({}, rules)
     var rules = {};
     var _gather = isDeep ? gather : extend({}, gather); // 深层对象保留引用关系
     for (var argName in originRules) {
         var value = _gather[argName];
-        rules[argName] = this._preTreatRule(originRules[argName], value, argName); // 规则单条实例
+        rules[argName] = this._preTreatRule(originRules[argName], value, argName, {stringEmpty: stringEmpty}); // 规则单条实例
     }
     return rules
 };
-Validator.prototype._preTreatRule = function _preTreatRule (originRule, value, argName) {
+Validator.prototype._preTreatRule = function _preTreatRule (originRule, value, argName, ref) {
+        if ( ref === void 0 ) ref = {};
+        var stringEmpty = ref.stringEmpty;
+
 
     var rule = extend({}, originRule);
 
@@ -2195,23 +2202,22 @@ Validator.prototype._preTreatRule = function _preTreatRule (originRule, value, a
         throw new Error('Any rule can\'t contains one more basic type, the param you are validing is ' + argName)
     }
 
-    if (!rule.value) {
+    if (rule.value === undefined) {
         rule.value = value;  // 获取验证值
     }
 
     if (!this.strict) {
 
-        if (rule.value === undefined || rule.string && rule.value === '') {
+        if ((rule.value === undefined || rule.string && rule.value === '') && rule.default !== undefined) {
             rule.value = rule.default; // 若值无效则取规则中的默认值（null 属于有效值，所以仅判断 undefined 和 ''）
         }
-        if (!rule.string && rule.value === '') {
-            if (rule.array) {
+        if (rule.value === '' && !rule.string) {
+            if (stringEmpty && rule.array) {
                 rule.value = []; // 特殊规则，如果是空字符串，会自动转为空数组
             } else {
                 rule.value = undefined; // 除了 rule.string = true 情况下，其他条件 value = '' 时转换为 undefined
             }
         }
-
         if (rule.string) {
             // 字符串预处理
             if (typeof rule.value !== 'string' && rule.value && typeof rule.value.toString === 'function') {
@@ -2246,8 +2252,6 @@ Validator.prototype._preTreatRule = function _preTreatRule (originRule, value, a
                             rule.value = [rule.value];
                         }
                     }
-                } else {
-                    rule.value = undefined;
                 }
             }
         } else if (rule.object) {
@@ -2278,9 +2282,11 @@ Validator.prototype.validate = function validate (rules, params, ref) {
         if ( ref === void 0 ) ref = {};
         var messages = ref.messages;
         var locale = ref.locale;
+        var stringEmpty = ref.stringEmpty;
         var ctx = ref.ctx;
 
 
+    if (stringEmpty === undefined) { stringEmpty = this.stringEmpty; }
 
     var deepInspect = function (rules, params, path) {
             if ( path === void 0 ) path = '';
@@ -2291,14 +2297,12 @@ Validator.prototype.validate = function validate (rules, params, ref) {
         var result = {}; // 已验证成功的字段（存在于 params 但没有验证的不会出现在 result 对象中）
         var errors = {}; // 返回体，如果某字段验证失败，错误信息将会记录在返回题中
 
-        var parsedRules = this$1$1._preTreatRules(rules, params, {isDeep: level > 0}); // 对规则进行预处理，遍历所有规则，获取值后存储在 rule 的 value 中
-
+        var parsedRules = this$1$1._preTreatRules(rules, params, {isDeep: level > 0, stringEmpty: stringEmpty}); // 对规则进行预处理，遍历所有规则，获取值后存储在 rule 的 value 中
         var loop = function ( argName ) {
-            var rule = parsedRules[argName];
 
+            var rule = parsedRules[argName];
             var gather = {argName: argName, rule: rule, rules: parsedRules, ctx: ctx, path: path};
 
-            // 必选字段检查 rule.required
             if (isTrueEmpty$1(rule.value)) {
                 if (this$1$1._isArgRequired(gather)) {
                     for (var i = 0; i < this$1$1.requiredValidNames.length; i++) {
@@ -2311,7 +2315,11 @@ Validator.prototype.validate = function validate (rules, params, ref) {
                         }
                     }
                     errors[argName] = this$1$1._getErrorMessage(gather);
-                    return
+                }
+                if (stringEmpty && rule.string && rule.value === '') {
+                    if (errors[argName]) {
+                        return
+                    }
                 } else {
                     return
                 }
@@ -2338,6 +2346,7 @@ Validator.prototype.validate = function validate (rules, params, ref) {
                     if (parsedRules) { gather.parsedValidValue = this$1$1._parseValidValue({validName: validName, rule: rule, rules: parsedRules, argName: argName, ctx: ctx}); } // 有些字段需要和另一个字段进行对比的， parsedValidValue 为需要对比的有效值
 
                     var verified = fn(rule.value, gather); // 进行验证, 返回 false string object 都算失败，返回 undefined null true 等为成功
+
                     if (verified === false || typeof verified === 'string') {
                         return ( obj = {}, obj[argName] = this$1$1._getErrorMessage(gather, {messages: messages, locale: locale, errType: verified}), obj ) // 获取失败信息
                     } else if (isObject$1(verified)) {
@@ -2373,7 +2382,7 @@ Validator.prototype.validate = function validate (rules, params, ref) {
                         var loop$1 = function ( index ) {
                             var item = rule.value[index];
                             var nextPath = "" + path + (path ? '.' : '') + argName + "." + index;
-                            var parsedRule = this$1$1._preTreatRule(rule.children, item, nextPath);
+                            var parsedRule = this$1$1._preTreatRule(rule.children, item, nextPath, {stringEmpty: stringEmpty});
                             var gather$1 = {argName: nextPath, rule: parsedRule, rules: {children: parsedRule}, ctx: ctx, path: nextPath};
                             var childrenErrors = deepInspectRule(parsedRule, null, gather$1, nextPath);
                             if (childrenErrors && Object.keys(childrenErrors).length > 0) {
