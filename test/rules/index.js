@@ -1,8 +1,8 @@
-const {Validator, Messages, Rules} = require('../../dist/index.cjs.js')
-const messagesZh = require('../../messages/zh.json')
-Messages.zh = messagesZh
-
+const {examiner, analysisData} = require('../main')
 const assert = require('power-assert')
+
+const {Rules} = require('../../dist/index.cjs.js')
+
 const data = {
 
     'correct.required': {value: 'abc', rule: {string: true, required: true}},
@@ -42,31 +42,6 @@ const data = {
     'correct.hash.md5': {value: 'c520855f2515dbc130884c2ab5a8abfe', rule: {hash: 'md5'}},
     'correct.mimeType': {value: 'image/png', rule: {mimeType: true}},
 
-    'correct.empty.int': {value: undefined, rule: {int: true}},
-    'correct.empty.float': {value: undefined, rule: {float: true}},
-    'correct.empty.boolean': {value: undefined, rule: {boolean: true}},
-    'correct.empty.string': {value: undefined, rule: {string: true}},
-    'correct.empty.array': {value: undefined, rule: {array: true}},
-    'correct.empty.object': {value: undefined, rule: {object: true}},
-
-    'correct.empty.string.int': {value: '', rule: {int: true}},
-    'correct.empty.string.float': {value: '', rule: {float: true}},
-    'correct.empty.string.boolean': {value: '', rule: {boolean: true}},
-    'correct.empty.string.string': {value: '', rule: {string: true}},
-    'correct.empty.string.array': {value: '', rule: {array: true}},
-    'correct.empty.string.object': {value: '', rule: {object: true}},
-
-    'correct.parse.number.string': {value: 123, rule: {string: true}},
-    'correct.parse.boolean.string': {value: true, rule: {string: true}},
-    'correct.parse.array.string': {value: ['1'], rule: {string: true}},
-    'correct.parse.object.string': {value: {}, rule: {string: true}},
-    'correct.parse.string.int': {value: '1', rule: {int: true}},
-    'correct.parse.string.float': {value: '1.25', rule: {float: true}},
-    'correct.parse.string.boolean': {value: 'false', rule: {boolean: true}},
-    'correct.parse.string.array': {value: "[1]", rule: {array: true}},
-    'correct.parse.string.object': {value: "{}", rule: {object: true}},
-    'correct.parse.children.string.int': {value: {age: '66'}, rule: {object: true, children: {age: {int: true}}}},
-
     'correct.in': {value: true, rule: {in: [1, 'false', true]}},
     'correct.notIn': {value: 2, rule: {notIn: [1, 'false', true]}},
     'correct.checkbox': {value: [1, 2, 3], rule: {checkbox: [1, 2, 3, 4, 5]}},
@@ -97,55 +72,6 @@ const data = {
     'correct.array.1': {value: [], rule: {array: true}},
     'correct.array.2': {value: "[]", rule: {array: true}},
     'correct.array.3': {value: "item", rule: {array: true}},
-    'correct.array.children': {value: ['1', '2', 'false'], rule: {array: true, children: {string: true}}},
-    'correct.array.children.object': {
-        value: [{name: 'DG', age: 18}, {name: 'LF', age: 20}],
-        rule: {
-            array: {min: 1, max: 10},
-            children: {
-                object: true,
-                children: {
-                    name: {string: true},
-                    age: {int: {min: 1, max: 99}}
-                }
-            }
-        }
-    },
-    'correct.array.children.filter': {
-        value: [{name: 'DG', age: 18}, {name: 'LF', nickname: 'OMG'}],
-        rule: {
-            array: {min: 1, max: 10},
-            children: {
-                object: true,
-                children: {
-                    name: {string: true},
-                    age: {int: {min: 1, max: 99}}
-                }
-            }
-        }
-    },
-    'correct.object.1': {value: {}, rule: {object: true}},
-    'correct.object.2': {value: '{"Json": true}', rule: {object: true}},
-    'correct.object.children': {
-        value: {name: 'DG', age: 18},
-        rule: {
-            object: true,
-            children: {
-                name: {string: true},
-                age: {int: {min: 1, max: 99}}
-            }
-        }
-    },
-    'correct.object.children.required': {
-        value: {name: 'DG'},
-        rule: {
-            object: true,
-            children: {
-                name: {string: true},
-                age: {int: {min: 1, max: 10}, required: false}
-            }
-        }
-    },
 
 
     // ==========
@@ -188,15 +114,6 @@ const data = {
     'fail.hash.md5': {value: 'c520855f2515dbc13084c2ab5a8abfs_', rule: {hash: 'md5'}},
     'fail.mimeType': {value: 'image/*', rule: {mimeType: true}},
 
-    'fail.parse.symbol.int': {value: Symbol('symbol'), rule: {int: true}},
-    'fail.parse.function.int': {value: new Function(), rule: {int: true}},
-    'fail.parse.string.int': {value: '1a', rule: {int: true}},
-    'fail.parse.boolean.int': {value: true, rule: {int: true}},
-    'fail.parse.array.int': {value: [], rule: {int: true}},
-    'fail.parse.object.int': {value: {}, rule: {int: true}},
-    'fail.parse.int.object': {value: 1, rule: {object: true}},
-    'fail.parse.int.array': {value: 1, rule: {object: true}},
-
     'fail.in': {value: false, rule: {in: [1, 'false', true]}},
     'fail.notIn': {value: 1, rule: {notIn: [1, 'false', true]}},
     'fail.checkbox': {value: [1, 2, 3, 6], rule: {checkbox: [1, 2, 3, 4, 5]}},
@@ -225,77 +142,20 @@ const data = {
     'fail.regexp': {value: '123a', rule: {regexp: /^[0-9]*$/}},
 
     'fail.array.min': {value: ['item'], rule: {array: {min: 2}}},
-    'fail.array.max': {value: ['item', 'item', 'item'], rule: {array: {max: 2}}},
-    'fail.array.children': {value: ['1', '2', false], rule: {array: true, children: {string: true}}},
-    'fail.array.children.object': {
-        value: [{name: 'DG', age: 18}, {name: 'LF', age: 20}],
-        rule: {
-            array: {min: 1, max: 10},
-            children: {
-                object: true,
-                children: {
-                    name: {string: true},
-                    age: {int: {min: 1, max: 19}}
-                }
-            }
-        }
-    },
-    'fail.object.1': {value: false, rule: {object: true}},
-    'fail.object.2': {value: "{}.", rule: {object: true}},
-    'fail.object.3': {value: "{ab: 1}", rule: {object: true}},
-    'fail.object.children': {
-        value: {name: 'DG', age: 18},
-        rule: {
-            object: true,
-            children: {
-                name: {string: true},
-                age: {int: {min: 1, max: 10}}
-            }
-        }
-    },
-    'fail.object.children.required': {
-        value: {name: 'DG'},
-        rule: {
-            object: true,
-            children: {
-                name: {string: true},
-                age: {int: {min: 1, max: 10}, required: true}
-            }
-        }
-    }
+    'fail.array.max': {value: ['item', 'item', 'item'], rule: {array: {max: 2}}}
+
 }
 
-const stringEmpty = true
-const examiner = new Validator({
-    stringEmpty
-})
-const values = {}
-const rules = {}
+const {rules, values} = analysisData(data)
 const messages = {}
-for (const key in data) {
-    const {value, rule} = data[key]
-    values[key] = value
-    rules[key] = rule
-}
 const res = examiner.checkup(rules, values, {messages})
 
+// // eslint-disable-next-line no-console
+// console.table(res.errors)
+// // eslint-disable-next-line no-console
+// console.log(res.result)
 
-// eslint-disable-next-line no-console
-console.table(res.errors)
-// eslint-disable-next-line no-console
-console.log(res.result)
-
-describe('规则测试', () => {
-
-    describe('字符串格式转化', () => {
-        it('string => int', () => assert(typeof res.result['correct.parse.string.int'] === 'number'))
-        it('string => float', () => assert(typeof res.result['correct.parse.string.float'] === 'number'))
-        it('string => boolean', () => assert(typeof res.result['correct.parse.string.boolean'] === 'boolean'))
-        it('number => string', () => assert(typeof res.result['correct.parse.number.string'] === 'string'))
-        it('string => array', () => assert(typeof res.result['correct.parse.string.array'] === 'object' && res.result['correct.parse.string.array'].length >= 0))
-        it('string => object', () => assert(typeof res.result['correct.parse.string.object'] === 'object'))
-        it('children | string => object', () => assert(typeof res.result['correct.parse.children.string.int'].age === 'number'))
-    })
+describe('基础规则测试', () => {
 
     const ruleKeys = Object.keys(Rules)
     const ruleValidKeys = ruleKeys.filter(name => name[0] !== '_')
@@ -304,39 +164,28 @@ describe('规则测试', () => {
 
     describe(`所有字段共计: ${total}, 所有规则总计: ${ruleKeys.length} (有效规则: ${ruleValidKeys.length}, 普通规则: ${ruleNormalKeys.length}, 辅助规则: ${ruleKeys.length - ruleValidKeys.length})`, () => {
 
-        const hasMeaning = key => {
-            const {value, rule} = data[key]
-            if (value === '' && rule) {
-                if (stringEmpty && (rule.string || rule.array)) {
-                    return true
-                }
-            }
-            return !(value === undefined || value === '' || typeof value === 'number' && isNaN(value))
-        }
-
         const successTotal = Object.keys(data).filter(key => key.indexOf('correct') === 0)
-        const successValidTotal = successTotal.filter(key => hasMeaning(key))
         const successReals = Object.keys(res.result)
-        const successStatis = {total: successTotal.length, valid: successValidTotal.length, real: successReals.length}
-        it(`验证合法匹配: ${successStatis.real}/${successStatis.valid}/${successStatis.total}`, () => {
-            assert(successStatis.real === successStatis.valid)
+        const successStatis = {total: successTotal.length, real: successReals.length}
+        it(`验证合法匹配: ${successStatis.real}/${successStatis.total}`, () => {
+            assert(successStatis.real === successStatis.total)
         })
 
         const errorsTotal = Object.keys(data).filter(key => key.indexOf('fail') === 0)
-        const errorsValidTotal = errorsTotal.filter(key => hasMeaning(key))
         const errorsReals = Object.keys(res.errors)
-        const errorsStatis = {total: errorsTotal.length, valid: errorsValidTotal.length, real: errorsReals.length}
-        it(`验证非法匹配: ${errorsStatis.real}/${errorsStatis.valid}/${errorsStatis.total}`, () => {
-            assert(errorsStatis.real === errorsStatis.valid)
+        const errorsStatis = {total: errorsTotal.length, real: errorsReals.length}
+        it(`验证非法匹配: ${errorsStatis.real}/${errorsStatis.total}`, () => {
+            assert(errorsStatis.real === errorsStatis.total)
         })
 
-        const successFilter = successValidTotal.filter(key => !successReals.find(_row => _row === key))
+        const successFilter = successTotal.filter(key => !successReals.find(_row => _row === key))
         const successMistake = successReals.filter(key => key.indexOf('fail') === 0)
+        const errorsFilter = errorsTotal.filter(key => !errorsReals.find(_row => _row === key))
         const errorsMistake = errorsReals.filter(key => key.indexOf('correct') === 0)
-        if (successFilter.concat(successMistake).concat(errorsMistake).length) {
+        if (successFilter.concat(successMistake).concat(errorsFilter).concat(errorsMistake).length > 0) {
             setTimeout(() => {
                 // eslint-disable-next-line no-console
-                console.log('\n错误', {successFilter, successMistake, errorsMistake}, '\n\n')
+                console.log('\n错误', {successFilter, successMistake, errorsFilter, errorsMistake}, '\n\n')
             }, 250)
         }
 
@@ -344,7 +193,3 @@ describe('规则测试', () => {
         // console.log({errorsTotal, errorsReals})
     })
 })
-
-module.exports = {
-    data
-}

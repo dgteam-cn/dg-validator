@@ -2201,11 +2201,15 @@ Validator.prototype._preTreatRule = function _preTreatRule (originRule, value, a
     }
 
     if (rule.value === undefined) {
-        rule.value = value;  // 获取验证值
+        rule.value = value;  // 获取默认值
     }
 
     if (!this.strict) {
 
+        // 非 allowNull 情况下, null 等同于 undefined
+        if (rule.value === null && !rule.allowNull) {
+            rule.value = undefined;
+        }
         if ((rule.value === undefined || rule.string && rule.value === '') && rule.default !== undefined) {
             rule.value = rule.default; // 若值无效则取规则中的默认值（null 属于有效值，所以仅判断 undefined 和 ''）
         }
@@ -2431,7 +2435,7 @@ Validator.Messages = Messages;
 Validator.Rules = Rules;
 
 var index = {
-    version: '0.2.2',
+    version: '0.2.4',
     Validator: Validator,
     Messages: Messages,
     Rules: Rules

@@ -181,11 +181,15 @@ class Validator {
         }
 
         if (rule.value === undefined) {
-            rule.value = value  // 获取验证值
+            rule.value = value  // 获取默认值
         }
 
         if (!this.strict) {
 
+            // 非 allowNull 情况下, null 等同于 undefined
+            if (rule.value === null && !rule.allowNull) {
+                rule.value = undefined
+            }
             if ((rule.value === undefined || rule.string && rule.value === '') && rule.default !== undefined) {
                 rule.value = rule.default // 若值无效则取规则中的默认值（null 属于有效值，所以仅判断 undefined 和 ''）
             }

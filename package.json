@@ -1,6 +1,6 @@
 {
   "name": "@dgteam/validator",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "",
   "author": "2681137811 <donguayx@qq.com>",
   "keywords": [
@@ -22,7 +22,7 @@
   "scripts": {
     "build": "node scripts/build.js",
     "lint": "npx eslint src test",
-    "test": "npx mocha --require intelli-espower-loader test/rules/index.js",
+    "test": "npx mocha --require intelli-espower-loader test/rules/*",
     "push": "npm publish --access public",
     "reset": "rimraf node_modules"
   },
