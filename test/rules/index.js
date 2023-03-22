@@ -24,7 +24,10 @@ const data = {
     'correct.iso8601.3': {value: '2009-02-26T12:00:00', rule: {iso8601: true}},
 
     'correct.mobile.1': {value: 18076644960, rule: {mobile: 'zh-CN'}},
-    'correct.mobile.2': {value: '+8618076644960', rule: {mobile: 'zh-CN'}},
+    'correct.mobile.2': {value: '18076644960', rule: {mobile: ['zh-CN']}},
+    'correct.mobile.3': {value: '+8618076644960', rule: {mobile: {mode: 'international'}}},
+    'correct.mobile.4': {value: '18076644960', rule: {mobile: {locale: ['zh-CN'], mode: 'default'}}},
+    'correct.mobile.5': {value: '+8618076644960', rule: {mobile: {locale: ['zh-CN'], mode: 'auto'}}},
     'correct.email': {value: 'abc@ddd.com', rule: {email: true}},
     'correct.lowercase': {value: 'abc', rule: {lowercase: true}},
     'correct.uppercase': {value: 'ABC', rule: {uppercase: true}},
@@ -96,7 +99,10 @@ const data = {
     'fail.iso8601.3': {value: '10-02-2020T12:00:00', rule: {iso8601: true}},
 
     'fail.mobile.1': {value: '28076644960', rule: {mobile: 'zh-CN'}},
-    'fail.mobile.2': {value: '+86018076644960', rule: {mobile: 'zh-CN'}},
+    'fail.mobile.2': {value: '+8618076644960', rule: {mobile: ['zh-CN']}},
+    'fail.mobile.3': {value: '+8618076644960', rule: {mobile: {mode: 'default'}}},
+    'fail.mobile.4': {value: '+8618076644960', rule: {mobile: {locale: ['zh-CN'], mode: 'default'}}},
+    'fail.mobile.5': {value: false, rule: {mobile: {locale: ['zh-CN'], mode: 'auto'}}},
     'fail.email': {value: 'abc@ddd_com', rule: {email: true}},
     'fail.lowercase': {value: 'aBc', rule: {lowercase: true}},
     'fail.uppercase': {value: 'AbC', rule: {uppercase: true}},

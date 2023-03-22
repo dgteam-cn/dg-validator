@@ -1729,7 +1729,7 @@ Rules.dateRange = function (value, ref) {
     // TODO 需要支持更多
     var range;
     if (typeof value === 'string') {
-        range = value.split(',');
+        range = value.split(/\s*,\s*/);
     } else if (Array.isArray(value)) {
         range = Array.from(value);
     } else {
@@ -1745,7 +1745,7 @@ Rules.datetimeRange = function (value, ref) {
     // const strict 是否为严格时间，如果为否仅验证格式不验证日期
     var range;
     if (typeof value === 'string') {
-        range = value.split(',');
+        range = value.split(/\s*,\s*/);
     } else if (Array.isArray(value)) {
         range = Array.from(value);
     } else {
@@ -1766,11 +1766,27 @@ Rules.iso8601 = function (value) { return isString(value) && isISO8601(value, {s
 // }
 
 // 需要为手机号
-// 第二个参数为 {String | Array<locale>} locale
+// validValue 传参方式: 'zh-CN' or ['zh-CN'] or {locale = 'zh-CN', mode = 'default'}
+// @param {String | Array<locale>} - locale
+// @param {String} mode - 模式 ['default', 'international', 'auto']
 Rules.mobile = function (value, ref) {
     var validValue = ref.validValue;
 
-    return isStringOrNumber(value) && _default$1(String(value), validValue && typeof validValue === 'string' ? validValue : 'zh-CN');
+    var locale = 'zh-CN', mode = 'default';
+    if (validValue) {
+        if (typeof validValue === 'string' || isArray(validValue)) {
+            locale = validValue;
+        } else if (typeof validValue === 'object') {
+            if (validValue.locale) { locale = validValue.locale; }
+            if (validValue.mode) { mode = validValue.mode; }
+            assert(isArray(locale) || typeof locale === 'string', 'opt.locale\'s value should be array or string');
+            assert(!!~['default', 'international', 'auto'].indexOf(mode), 'opt.mode\'s value should be in ["default", "international", "auto"]');
+        }
+    }
+    if (!isStringOrNumber(value)) { return false }
+    if (mode === 'default' && String(value).startsWith('+')) { return false } // default 下不允许添加国际手机号前缀
+    if (mode === 'international' && !String(value).startsWith('+')) { return false } // international 下强制要求添加国际手机号前缀并以 + 号开头
+    return _default$1(String(value), validValue && (typeof validValue === 'string' || isArray(validValue)) ? validValue : 'zh-CN')
 };
 
 // 需要为 email 格式, options 参见 https://github.com/chriso/validator.js
@@ -2249,7 +2265,7 @@ Validator.prototype._preTreatRule = function _preTreatRule (originRule, value, a
                         }
                     } catch (e) {
                         if (rule.value.indexOf(',') > -1) {
-                            rule.value = rule.value.split(',');
+                            rule.value = rule.value.split(/\s*,\s*/); // 2022-10-26 调整兼容空格
                         } else {
                             rule.value = [rule.value];
                         }
@@ -2435,7 +2451,7 @@ Validator.Messages = Messages;
 Validator.Rules = Rules;
 
 var index = {
-    version: '0.2.4',
+    version: '0.2.5',
     Validator: Validator,
     Messages: Messages,
     Rules: Rules

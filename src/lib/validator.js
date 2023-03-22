@@ -229,7 +229,7 @@ class Validator {
                             }
                         } catch (e) {
                             if (rule.value.indexOf(',') > -1) {
-                                rule.value = rule.value.split(',')
+                                rule.value = rule.value.split(/\s*,\s*/) // 2022-10-26 调整兼容空格
                             } else {
                                 rule.value = [rule.value]
                             }
